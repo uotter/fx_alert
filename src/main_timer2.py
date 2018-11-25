@@ -1,10 +1,9 @@
 # -*- coding:utf-8 -*-
 
-import time
-import os
-import sched
-import sys
-import datetime
+i
+import datetime, configparser, sched, time, _datetime
+from fx_search import ForeignExchange
+from message import Email, Wechat
 
 # 初始化sched模块的scheduler类
 # 第一个参数是一个可以返回时间戳的函数，第二个参数可以在定时未到达之前阻塞。
@@ -14,20 +13,20 @@ start_time = 0
 end_time = 0
 
 
+# def run_Task(api_name, codepairs):
+#     email = Email()
+#     fx = ForeignExchange()
+#     result = fx.alert(api_name=api_name, codepairs=codepairs)
+#     email.send_text(result)
+
+def run_Task(api_name, codepairs):
+    print("Exchange alert test.")
+
+
 class mytimer():
-    def __init__(self,exec_fun):
+    def __init__(self, exec_fun):
+        # 被周期性调度触发的函数
         self.exec_function = exec_fun
-    # 被周期性调度触发的函数
-    def execute_command(self, cmd, inc):
-        start_time = datetime.datetime.now()
-        os.system(cmd)
-        time.sleep(3)
-        end_time = datetime.datetime.now()
-        delay = round((end_time - start_time).total_seconds())
-        print(u'mytimer => 开始时间：%s' % start_time)
-        print(u'mytimer => 耗时:%smin' % (delay / 60))
-        schedule.enter(int(inc - delay), 0, self.execute_command, (cmd, inc))
-        print(u'mytimer => 结束时间：%s' % end_time)
 
     def cmd_timer(self, cmd, time_str, inc=60):
         # cmd：windows中命令行代码
@@ -42,10 +41,27 @@ class mytimer():
             schedule_time = schedule_time + datetime.timedelta(days=1)
         time_before_start = int(round((schedule_time - datetime.datetime.now()).total_seconds()))
         print(u'mytimer => 还有%s秒开始任务' % time_before_start)
-        schedule.enter(time_before_start, 0, self.execute_command, (cmd, inc))
+        schedule.enter(time_before_start, 0, self.exec_function, (cmd, inc))
         schedule.run()
 
 
 if __name__ == '__main__':
-    mytimer = mytimer()
-    mytimer.cmd_timer("netstat -an", '22:15', 5)
+    config = configparser.ConfigParser()
+    config.read("config.ini", encoding="utf-8")
+    api_name = config.get("alert", "apiname")
+    codepairs = config.get("alert", "codepairs").split(",")
+    delta_value = config.getint("alert", "delta_value")
+    delta_type = config.get("alert", "delta_type")
+    today_time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M").split("-")
+    # today_time_str[3] is the hour
+    if int(today_time_str[3]) >= config.getint("alert", "start_hour"):
+        first_time_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d-%H-%M").split("-")
+    else:
+        first_time_str = today_time_str
+    sched_Timer = datetime.datetime(int(first_time_str[0]), int(first_time_str[1]), int(first_time_str[2]),
+                                    int(config.getint("alert", "start_hour")),
+                                    int(config.getint("alert", "start_minute")), 00)
+    time_before_start = int(round((sched_Timer - datetime.datetime.now()).total_seconds()))
+    print(u'exchange_alert => 第一次执行任务时间为%s,还有%s秒开始第一次任务' % (sched_Timer.strftime("%Y-%m-%d-%H-%M"), time_before_start))
+    mytimer = mytimer(run_Task)
+    mytimer.cmd_timer("netstat -an", '18:58', 10)
