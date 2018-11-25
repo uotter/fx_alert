@@ -11,6 +11,7 @@ def run_Task(api_name, codepairs):
     result = fx.alert(api_name=api_name, codepairs=codepairs)
     email.send_text(result)
 
+
 # def run_Task(api_name, codepairs):
 #     print("Exchange alert test.")
 
@@ -51,10 +52,15 @@ if __name__ == "__main__":
     codepairs = config.get("alert", "codepairs").split(",")
     delta_value = config.getint("alert", "delta_value")
     delta_type = config.get("alert", "delta_type")
-    today_time_str = (datetime.datetime.now() + datetime.timedelta(minutes=1)).strftime("%Y-%m-%d-%H-%M").split("-")
-    sched_Timer = datetime.datetime(int(today_time_str[0]), int(today_time_str[1]), int(today_time_str[2]),
-                                    int(today_time_str[3]), int(today_time_str[4]), 00)
+    today_time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M").split("-")
+    # today_time_str[3] is the hour
+    if int(today_time_str[3]) >= config.getint("alert", "start_hour"):
+        first_time_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d-%H-%M").split("-")
+    else:
+        first_time_str = today_time_str
+    sched_Timer = datetime.datetime(int(first_time_str[0]), int(first_time_str[1]), int(first_time_str[2]),
+                                    int(config.getint("alert", "start_hour")), int(config.getint("alert", "start_minute")), 00)
     time_before_start = int(round((sched_Timer - datetime.datetime.now()).total_seconds()))
-    print(u'exchange_alert => 还有%s秒开始第一次任务' % time_before_start)
-    # timeFun(sched_Timer, api_name, codepairs, delta_value, delta_type)
-    run_Task(api_name, codepairs)
+    print(u'exchange_alert => 第一次执行任务时间为%s,还有%s秒开始第一次任务' % (sched_Timer.strftime("%Y-%m-%d-%H-%M"), time_before_start))
+    timeFun(sched_Timer, api_name, codepairs, delta_value, delta_type)
+    # run_Task(api_name, codepairs)
