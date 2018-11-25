@@ -1,4 +1,6 @@
 # 导入模块
+import datetime
+
 from wxpy import *
 import smtplib
 from email.mime.text import MIMEText
@@ -47,11 +49,14 @@ class Email():
         # 邮件内容设置
         self.message = MIMEText(text, 'plain', 'utf-8')
         # 邮件主题
-        self.message['Subject'] = 'title'
+        if "Warning" in text:
+            self.message['Subject'] = '[Warning]Exchange Alert on %s' % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        else:
+            self.message['Subject'] = 'Exchange Alert on %s' % datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         # 发送方信息
         self.message['From'] = self.sender
         # 接受方信息
-        self.message['To'] = self.receivers
+        self.message['To'] = self.receivers[0]
         # 登录并发送邮件
         try:
             smtpObj = smtplib.SMTP()
@@ -72,4 +77,3 @@ class Email():
 if __name__ == "__main__":
     email = Email()
     email.send_text("test")
-
